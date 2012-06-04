@@ -371,8 +371,9 @@ install: stamps/gcc_installed
 
 clean:
 	rm -rf stamps build $(TEMPINST)
-	rm $(TOOLCHAIN_ARCHIVE)
+	rm -f $(TOOLCHAIN_ARCHIVE)
 	rm -rf src
+	rm -f README.html
 
 .PHONY:clean
 
