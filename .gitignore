@@ -1,4 +1,7 @@
 bada_SDK*.zip
+bada-g++-4.5-3-src.tar.bz2
 src/*
 build/*
 stamps/*
+tempinst/*
+*~
