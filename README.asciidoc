@@ -23,9 +23,6 @@ files from Samsung. You still need to have your own copy of bada IDE downloaded
 and installed on some Windows box (you probably have it already on your VirtualBox machine, don't you?),
 but you need it only once, to copy some files required by your new Windows-free SDK.
 
-Bug! Before +Broker.exe+ is ported (or proven to work with +wine+), you still need a Windows machine (possibly virtual)
-to download app to your phone. I'm working to solve it.
-
 Last but not least, I do not plan to include a simulator in this project. Real men use real hardware, howgh!
 
 
