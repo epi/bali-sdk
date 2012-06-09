@@ -93,6 +93,7 @@ stamps/gmp_configured: stamps/unpack_toolchain
 		--host=$(HOST) \
 		--build=$(HOST) \
 		--prefix=$(TEMPINST) \
+		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
 		--enable-cxx ) \
 	&& $(touch)
@@ -113,6 +114,7 @@ stamps/mpfr_configured: stamps/gmp_installed
 		--build=$(HOST) \
 		--target=$(TARGET) \
 		--prefix=$(TEMPINST) \
+		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
 		--disable-nls \
 		--with-gmp=$(TEMPINST) ) \
@@ -134,6 +136,7 @@ stamps/mpc_configured: stamps/gmp_installed stamps/mpfr_installed
 		--build=$(HOST) \
 		--target=$(TARGET) \
 		--prefix=$(TEMPINST) \
+		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
 		--with-gmp=$(TEMPINST) \
 		--with-mpfr-lib=$(TEMPINST)/lib \
@@ -156,6 +159,7 @@ stamps/ppl_configured: stamps/gmp_installed
 		--build=$(HOST) \
 		--target=$(TARGET) \
 		--prefix=$(TEMPINST) \
+		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
 		--disable-nls \
 		--with-libgmp-prefix=$(TEMPINST) ) \
@@ -178,9 +182,10 @@ stamps/cloog_configured: stamps/gmp_installed stamps/ppl_installed
 			--build=$(HOST) \
 			--target=$(TARGET) \
 			--prefix=$(TEMPINST) \
+			--libdir=$(TEMPINST)/lib \
 			--disable-shared \
 			--disable-nls \
-			--with-gmp-prefix=$(TEMPINST) ) \
+			--with-gmp-prefix=$(TEMPINST) \
 			--with-ppl-prefix=$(TEMPINST) ) \
 	&& $(touch)
 
