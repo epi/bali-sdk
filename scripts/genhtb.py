@@ -19,6 +19,7 @@
 import sys
 import hashlib
 import struct
+import re
 import xml.dom.minidom
 
 class BadaManifest:
@@ -28,7 +29,17 @@ class BadaManifest:
 		self.appId = self.dom.getElementsByTagName("Id")[0].childNodes[0].data
 		self.secret = self.dom.getElementsByTagName("Secret")[0].childNodes[0].data
 		self.version = self.dom.getElementsByTagName("AppVersion")[0].childNodes[0].data
-	
+
+	_dig = '0123456789abcdefghijklmnopqrstuvwxyz'
+
+	def getBase36Version(self):
+		ver = self.version
+		mo = re.match("([0-9]+)\.([0-9]+)\.([0-9]+)", ver)
+		if not mo:
+			raise ValueError, 'invalid version number syntax'
+		buildh, buildl = divmod(int(mo.group(3)), 36)
+		return self._dig[int(mo.group(1))] + self._dig[int(mo.group(2))] + self._dig[buildh] + self._dig[buildl]
+
 def readByChunk(fileObject, chunkSize):
 	while True:
 		data = fileObject.read(chunkSize)
@@ -45,12 +56,12 @@ if len(sys.argv) != 2 and len(sys.argv) != 4:
 	exit(1)
 
 manifest = BadaManifest(sys.argv[1])
-version = "1000" # TODO: encode app version based on manifest!
+version = manifest.getBase36Version()
 headerLength = len("Hash") + 4 + 4 + 4 + len(manifest.appId) + 4 + len(version) + 4 + len(manifest.secret)
 
 print "id:     ", manifest.appId
 print "secret: ", manifest.secret
-print "version:", manifest.version 
+print "version:", manifest.version, '(%s)' % version
 
 if len(sys.argv) == 4:
 	inf = open(sys.argv[2])
