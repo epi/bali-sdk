@@ -31,7 +31,7 @@ LIBICONV_DIR      := src/libiconv-1.13.1
 MPC_DIR           := src/mpc-0.9
 NEWLIB_DIR        := src/newlib-1.19.0
 
-PKGCONF           := GCC 4.5.3 for Bada
+PKGCONF           := bada
 BUGURL            := https://support.codesourcery.com/GNUToolchain/
 
 ASCIIDOC           = asciidoc -o $@ -a doctime
@@ -58,7 +58,8 @@ stamps/unpack_main: $(MAIN_ARCHIVE)
 	unzip $(MAIN_ARCHIVE) $(TOOLCHAIN_ARCHIVE) && $(touch)
 
 stamps/unpack_toolchain: stamps/unpack_main
-	tar jxf $(TOOLCHAIN_ARCHIVE) --exclude="build*.sh" && $(touch)
+	tar jxf $(TOOLCHAIN_ARCHIVE)
+--exclude="build*.sh" && $(touch)
 
 # binutils
 
@@ -217,8 +218,6 @@ stamps/cloog_installed: stamps/cloog_built
 
 # gcc pre
 
-#			--with-gnu-ld '--with-specs=%{O2:%{!fno-remove-local-statics: -fremove-local-statics}} %{O*:%{O|O0|O1|O2|Os:;:%{!fno-remove-local-statics: -fremove-local-statics}}}' \
-
 stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpfr_installed stamps/mpc_installed stamps/ppl_installed stamps/cloog_installed stamps/binutils_installed
 	( mkdir -p build/gcc_pre && cd build/gcc_pre && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
@@ -228,20 +227,20 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 		export LD_LIBRARY_PATH="$$LD_LIBRARY_PATH":$(TEMPINST)/lib && \
 		export CPATH="$$CPATH":$(TEMPINST)/include && \
 		../../$(GCC_DIR)/configure \
-			--host=$(HOST) \
 			--build=$(HOST) \
+			--host=$(HOST) \
 			--target=$(TARGET) \
 			--enable-threads \
 			--disable-libmudflap \
 			--disable-libssp \
 			--disable-libstdcxx-pch \
 			--enable-extra-sgxx-multilibs \
-			--disable-multilib \
-			--with-mode=thumb \
-			--with-cpu=cortex-a8 \
-			--with-float=hard \
+			--with-mode=arm \
+			--with-arch=armv5te \
+			--with-float=soft \
 			--with-gnu-as \
 			--with-gnu-ld \
+			--with-specs='%{save-temps: -fverbose-asm}' \
 			--enable-languages=c,c++ \
 			--enable-shared \
 			--disable-lto \
@@ -250,15 +249,8 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--with-bugurl="$(BTURL)" \
 			--disable-nls \
 			--prefix=$(TEMPINST) \
-			--disable-shared \
-			--disable-threads \
-			--disable-libssp \
-			--disable-libgomp \
-			--without-headers \
-			--with-newlib \
-			--disable-decimal-float \
-			--disable-libffi \
-			--enable-languages=c \
+			--with-headers=yes \
+			--enable-decimal-float=bid \
 			--with-gmp-include=$(TEMPINST)/include \
 			--with-gmp-lib=$(TEMPINST)/lib \
 			--with-mpfr-include=$(TEMPINST)/include \
@@ -270,8 +262,10 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--with-host-libstdcxx="-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm" \
 			--with-cloog=$(TEMPINST) \
 			--disable-libgomp \
-			--disable-poison-system-directories \
-			--with-build-time-tools=$(TEMPINST)/$(TARGET)/bin ) \
+			--enable-poison-system-directories \
+			--with-build-time-tools=$(TEMPINST)/$(TARGET)/bin \
+			--with-pic=yes \
+			--enable-clocale=auto ) \
 	&& $(touch)
 
 stamps/gcc_pre_built: stamps/gcc_pre_configured
@@ -319,8 +313,6 @@ stamps/newlib_installed: stamps/newlib_built
 
 # gcc post
 
-#			'--with-specs=%{O2:%{!fno-remove-local-statics: -fremove-local-statics}} %{O*:%{O|O0|O1|O2|Os:;:%{!fno-remove-local-statics: -fremove-local-statics}}}' \
-
 stamps/gcc_configured: stamps/newlib_installed
 	( mkdir -p build/gcc_post && cd build/gcc_post && \
 		export AR_FOR_TARGET=$TARGET-ar && \
@@ -328,20 +320,20 @@ stamps/gcc_configured: stamps/newlib_installed
 		export OBJDUMP_FOR_TARGET=$TARGET-objdump && \
 		export STRIP_FOR_TARGET=$TARGET-strip && \
 		../../$(GCC_DIR)/configure \
-			--host=$(HOST) \
 			--build=$(HOST) \
+			--host=$(HOST) \
 			--target=$(TARGET) \
 			--enable-threads \
 			--disable-libmudflap \
 			--disable-libssp \
 			--disable-libstdcxx-pch \
 			--enable-extra-sgxx-multilibs \
-			--disable-multilib \
-			--with-mode=thumb \
-			--with-cpu=cortex-a8 \
-			--with-float=hard \
+			--with-mode=arm \
+			--with-arch=armv5te \
+			--with-float=soft \
 			--with-gnu-as \
 			--with-gnu-ld \
+			--with-specs='%{save-temps: -fverbose-asm}' \
 			--enable-languages=c,c++ \
 			--enable-shared \
 			--disable-lto \
@@ -351,6 +343,7 @@ stamps/gcc_configured: stamps/newlib_installed
 			--disable-nls \
 			--prefix=$(TEMPINST) \
 			--with-headers=yes \
+			--enable-decimal-float=bid \
 			--with-gmp-include=$(TEMPINST)/include \
 			--with-gmp-lib=$(TEMPINST)/lib \
 			--with-mpfr-include=$(TEMPINST)/include \
@@ -362,8 +355,10 @@ stamps/gcc_configured: stamps/newlib_installed
 			--with-host-libstdcxx="-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm" \
 			--with-cloog=$(TEMPINST) \
 			--disable-libgomp \
-			--disable-poison-system-directories \
-			--with-build-time-tools=$(TEMPINST)/$(TARGET)/bin ) \
+			--enable-poison-system-directories \
+			--with-build-time-tools=$(TEMPINST)/$(TARGET)/bin \
+			--with-pic=yes \
+			--enable-clocale=auto ) \
 	&& $(touch)
 
 stamps/gcc_built: stamps/gcc_configured
