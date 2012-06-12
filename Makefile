@@ -148,9 +148,13 @@ stamps/mpfr_installed: stamps/mpfr_built
 	( cd build/mpfr && $(MAKE) install ) \
 	&& $(touch)
 
+stamps/mpfr_checked: stamps/mpfr_installed
+	( cd build/mpfr && $(MAKE) check ) \
+	&& $(touch)
+
 # mpc
 
-stamps/mpc_configured: stamps/gmp_checked stamps/mpfr_installed
+stamps/mpc_configured: stamps/gmp_checked stamps/mpfr_checked
 	( mkdir -p build/mpc && cd build/mpc && ../../$(MPC_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -221,7 +225,7 @@ stamps/cloog_installed: stamps/cloog_built
 
 # gcc pre
 
-stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_installed stamps/mpc_installed stamps/ppl_installed stamps/cloog_installed stamps/binutils_installed
+stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_checked stamps/mpc_installed stamps/ppl_installed stamps/cloog_installed stamps/binutils_installed
 	( mkdir -p build/gcc_pre && cd build/gcc_pre && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
 		export NM_FOR_TARGET=$(TARGET)-nm && \
