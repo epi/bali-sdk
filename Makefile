@@ -32,7 +32,7 @@ MPC_DIR           := src/mpc-0.9
 NEWLIB_DIR        := src/newlib-1.19.0
 
 PKGCONF           := bada
-BUGURL            := https://support.codesourcery.com/GNUToolchain/
+BUGURL            := 
 
 ASCIIDOC           = asciidoc -o $@ -a doctime
 
