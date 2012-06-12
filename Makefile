@@ -62,7 +62,7 @@ stamps/unpack_toolchain: stamps/unpack_main
 
 # binutils
 
-stamps/binutils_configured: stamps/unpack_toolchain
+stamps/binutils_configured: stamps/gmp_checked stamps/mpfr_checked stamps/cloog_checked stamps/mpc_checked stamps/ppl_installed
 	( mkdir -p build/binutils && cd build/binutils && ../../$(BINUTILS_DIR)/configure \
 		--host="$(HOST)" \
 		--build="$(HOST)" \
@@ -70,9 +70,17 @@ stamps/binutils_configured: stamps/unpack_toolchain
 		--prefix="$(TEMPINST)" \
 		--with-pkgversion="$(PKGCONF)" \
 		--with-bugurl="$(BTURL)" \
-		--disable-nls \
-		--disable-werror \
-		--disable-poison-system-directories ) \
+		--with-gmp-include="$(PREFIX)"/include \
+		--with-gmp-lib="$(PREFIX)"/lib \
+		--with-mpfr-include="$(PREFIX)"/include \
+		--with-mpfr-lib="$(PREFIX)"/lib \
+		--with-mpc-include="$(PREFIX)"/include \
+		--with-mpc-lib="$(PREFIX)"/lib \
+		--with-ppl-include="$(PREFIX)"/include \
+		--with-ppl-lib="$(PREFIX)"/lib \
+		--with-cloog-include="$(PREFIX)"/include \
+		--with-cloog-lib="$(PREFIX)"/lib \
+		--disable-nls ) \
 	&& $(touch)
 
 stamps/binutils_built: stamps/binutils_configured
@@ -175,6 +183,10 @@ stamps/mpc_installed: stamps/mpc_built
 	( cd build/mpc && $(MAKE) install ) \
 	&& $(touch)
 
+stamps/mpc_checked: stamps/mpc_installed
+	( cd build/mpc && $(MAKE) check ) \
+	&& $(touch)
+
 # ppl
 
 stamps/ppl_configured: stamps/gmp_checked
@@ -214,18 +226,20 @@ stamps/cloog_configured: stamps/gmp_checked stamps/ppl_installed
 	&& $(touch)
 
 stamps/cloog_built: stamps/cloog_configured
-	( cd build/cloog && \
-		$(MAKE) ) \
+	( cd build/cloog && $(MAKE) ) \
 	&& $(touch)
 
 stamps/cloog_installed: stamps/cloog_built
-	( cd build/cloog && \
-		$(MAKE) install ) \
+	( cd build/cloog && $(MAKE) install ) \
+	&& $(touch)
+
+stamps/cloog_checked: stamps/cloog_installed
+	( cd build/cloog && $(MAKE) check ) \
 	&& $(touch)
 
 # gcc pre
 
-stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_checked stamps/mpc_installed stamps/ppl_installed stamps/cloog_installed stamps/binutils_installed
+stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_checked stamps/mpc_checked stamps/ppl_installed stamps/cloog_checked stamps/binutils_installed
 	( mkdir -p build/gcc_pre && cd build/gcc_pre && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
 		export NM_FOR_TARGET=$(TARGET)-nm && \
