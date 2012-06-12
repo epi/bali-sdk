@@ -58,8 +58,7 @@ stamps/unpack_main: $(MAIN_ARCHIVE)
 	unzip $(MAIN_ARCHIVE) $(TOOLCHAIN_ARCHIVE) && $(touch)
 
 stamps/unpack_toolchain: stamps/unpack_main
-	tar jxf $(TOOLCHAIN_ARCHIVE)
---exclude="build*.sh" && $(touch)
+	tar jxf $(TOOLCHAIN_ARCHIVE) --exclude="build*.sh" && $(touch)
 
 # binutils
 
@@ -101,18 +100,18 @@ stamps/zlib_installed: stamps/zlib_built
 
 # gmp
 
-#		--target=$(TARGET) \
-
 stamps/gmp_configured: stamps/unpack_toolchain
 	( mkdir -p build/gmp && cd build/gmp && \
 		export LD_LIBRARY_PATH=$(TEMPINST)/lib:"$$LD_LIBRARY_PATH" && \
 		../../$(GMP_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
+		--target=$(HOST) \
 		--prefix=$(TEMPINST) \
 		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
-		--enable-cxx ) \
+		--enable-cxx \
+		--disable-nls ) \
 	&& $(touch)
 
 stamps/gmp_built: stamps/gmp_configured
@@ -123,9 +122,13 @@ stamps/gmp_installed: stamps/gmp_built
 	( cd build/gmp && $(MAKE) install ) \
 	&& $(touch)
 
+stamps/gmp_checked: stamps/gmp_installed
+	( cd build/gmp && $(MAKE) CFLAGS='-O2 -g' check ) \
+	&& $(touch)
+
 # mpfr
 
-stamps/mpfr_configured: stamps/gmp_installed
+stamps/mpfr_configured: stamps/gmp_checked
 	( mkdir -p build/mpfr && cd build/mpfr && ../../$(MPFR_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -147,7 +150,7 @@ stamps/mpfr_installed: stamps/mpfr_built
 
 # mpc
 
-stamps/mpc_configured: stamps/gmp_installed stamps/mpfr_installed
+stamps/mpc_configured: stamps/gmp_checked stamps/mpfr_installed
 	( mkdir -p build/mpc && cd build/mpc && ../../$(MPC_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -170,7 +173,7 @@ stamps/mpc_installed: stamps/mpc_built
 
 # ppl
 
-stamps/ppl_configured: stamps/gmp_installed
+stamps/ppl_configured: stamps/gmp_checked
 	( mkdir -p build/ppl && cd build/ppl && ../../$(PPL_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -192,7 +195,7 @@ stamps/ppl_installed: stamps/ppl_built
 
 # cloog
 
-stamps/cloog_configured: stamps/gmp_installed stamps/ppl_installed
+stamps/cloog_configured: stamps/gmp_checked stamps/ppl_installed
 	( mkdir -p build/cloog && cd build/cloog && \
 		../../$(CLOOG_DIR)/configure \
 			--host=$(HOST) \
@@ -218,7 +221,7 @@ stamps/cloog_installed: stamps/cloog_built
 
 # gcc pre
 
-stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpfr_installed stamps/mpc_installed stamps/ppl_installed stamps/cloog_installed stamps/binutils_installed
+stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_installed stamps/mpc_installed stamps/ppl_installed stamps/cloog_installed stamps/binutils_installed
 	( mkdir -p build/gcc_pre && cd build/gcc_pre && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
 		export NM_FOR_TARGET=$(TARGET)-nm && \
@@ -230,9 +233,7 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--build=$(HOST) \
 			--host=$(HOST) \
 			--target=$(TARGET) \
-			--enable-threads \
 			--disable-libmudflap \
-			--disable-libssp \
 			--disable-libstdcxx-pch \
 			--enable-extra-sgxx-multilibs \
 			--with-mode=arm \
@@ -241,16 +242,20 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--with-gnu-as \
 			--with-gnu-ld \
 			--with-specs='%{save-temps: -fverbose-asm}' \
-			--enable-languages=c,c++ \
-			--enable-shared \
 			--disable-lto \
-			--with-newlib \
 			--with-pkgversion="$(PKGCONF)" \
 			--with-bugurl="$(BTURL)" \
 			--disable-nls \
 			--prefix=$(TEMPINST) \
-			--with-headers=yes \
-			--enable-decimal-float=bid \
+			--disable-shared \
+			--disable-threads \
+			--disable-libssp \
+			--disable-libgomp \
+			--without-headers \
+			--with-newlib \
+			--disable-decimal-float \
+			--disable-libffi \
+			--enable-languages=c \
 			--with-gmp-include=$(TEMPINST)/include \
 			--with-gmp-lib=$(TEMPINST)/lib \
 			--with-mpfr-include=$(TEMPINST)/include \
@@ -261,7 +266,6 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--with-ppl-lib=$(TEMPINST)/lib \
 			--with-host-libstdcxx="-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm" \
 			--with-cloog=$(TEMPINST) \
-			--disable-libgomp \
 			--enable-poison-system-directories \
 			--with-build-time-tools=$(TEMPINST)/$(TARGET)/bin \
 			--with-pic=yes \
