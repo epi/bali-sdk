@@ -40,7 +40,7 @@ HOST     := $(shell gcc -v 2>&1 | grep '\-\-build=' | sed -e 's/^.*--build=//' |
 TARGET   := arm-bada-eabi
 TEMPINST := $(shell pwd)/tempinst
 
-touch = mkdir -p stamps && touch $@ && ( printf "\x1b[1;33;40m${@:stamps/%=%}\x1b[0m\n" >/dev/stderr )
+touch = mkdir -p stamps && touch $@ && ( tput bold; tput setf 6; echo ${@:stamps/%=%}; tput sgr0 ) >/dev/stderr
 
 all: stamps/tidyup
 .PHONY: all
