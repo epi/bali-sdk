@@ -40,6 +40,7 @@ HOST     := $(shell gcc -v 2>&1 | grep '\-\-build=' | sed -e 's/^.*--build=//' |
 TARGET   := arm-bada-eabi
 TEMPINST := $(shell pwd)/tempinst
 
+announce = ( tput bold; tput setf 2; echo Starting ${@:stamps/%=%}; tput sgr0 ) >/dev/stderr
 touch = mkdir -p stamps && touch $@ && ( tput bold; tput setf 6; echo ${@:stamps/%=%}; tput sgr0 ) >/dev/stderr
 
 all: stamps/tidyup
@@ -63,6 +64,7 @@ stamps/unpack_toolchain: stamps/unpack_main
 # binutils
 
 stamps/binutils_configured: stamps/gmp_checked stamps/mpfr_checked stamps/cloog_checked stamps/mpc_checked stamps/ppl_installed
+	@$(announce) && \
 	( mkdir -p build/binutils && cd build/binutils && ../../$(BINUTILS_DIR)/configure \
 		--host="$(HOST)" \
 		--build="$(HOST)" \
@@ -85,31 +87,37 @@ stamps/binutils_configured: stamps/gmp_checked stamps/mpfr_checked stamps/cloog_
 	&& $(touch)
 
 stamps/binutils_built: stamps/binutils_configured
+	@$(announce) && \
 	( cd build/binutils && $(MAKE) ) \
 	&& $(touch)
 
 stamps/binutils_installed: stamps/binutils_built
+	@$(announce) && \
 	( cd build/binutils && $(MAKE) install ) \
 	&& $(touch)
 
 # zlib
 
 stamps/zlib_configured: stamps/unpack_toolchain
+	@$(announce) && \
 	( cd $(ZLIB_DIR) && ./configure \
 		--prefix="$(TEMPINST)" ) \
 	&& $(touch)
 
 stamps/zlib_built: stamps/zlib_configured
+	@$(announce) && \
 	( cd $(ZLIB_DIR) && $(MAKE) ) \
 	&& $(touch)
 
 stamps/zlib_installed: stamps/zlib_built
+	@$(announce) && \
 	( cd $(ZLIB_DIR) && $(MAKE) install ) \
 	&& $(touch)
 
 # gmp
 
 stamps/gmp_configured: stamps/unpack_toolchain
+	@$(announce) && \
 	( mkdir -p build/gmp && cd build/gmp && \
 		export LD_LIBRARY_PATH=$(TEMPINST)/lib:"$$LD_LIBRARY_PATH" && \
 		../../$(GMP_DIR)/configure \
@@ -124,20 +132,24 @@ stamps/gmp_configured: stamps/unpack_toolchain
 	&& $(touch)
 
 stamps/gmp_built: stamps/gmp_configured
+	@$(announce) && \
 	( cd build/gmp && $(MAKE) ) \
 	&& $(touch)
 
 stamps/gmp_installed: stamps/gmp_built
+	@$(announce) && \
 	( cd build/gmp && $(MAKE) install ) \
 	&& $(touch)
 
 stamps/gmp_checked: stamps/gmp_installed
+	@$(announce) && \
 	( cd build/gmp && $(MAKE) CFLAGS='-O2 -g' check ) \
 	&& $(touch)
 
 # mpfr
 
 stamps/mpfr_configured: stamps/gmp_checked
+	@$(announce) && \
 	( mkdir -p build/mpfr && cd build/mpfr && ../../$(MPFR_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -150,20 +162,24 @@ stamps/mpfr_configured: stamps/gmp_checked
 	&& $(touch)
 
 stamps/mpfr_built: stamps/mpfr_configured
+	@$(announce) && \
 	( cd build/mpfr && $(MAKE) ) \
 	&& $(touch)
 
 stamps/mpfr_installed: stamps/mpfr_built
+	@$(announce) && \
 	( cd build/mpfr && $(MAKE) install ) \
 	&& $(touch)
 
 stamps/mpfr_checked: stamps/mpfr_installed
+	@$(announce) && \
 	( cd build/mpfr && $(MAKE) check ) \
 	&& $(touch)
 
 # mpc
 
 stamps/mpc_configured: stamps/gmp_checked stamps/mpfr_checked
+	@$(announce) && \
 	( mkdir -p build/mpc && cd build/mpc && ../../$(MPC_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -177,20 +193,24 @@ stamps/mpc_configured: stamps/gmp_checked stamps/mpfr_checked
 	&& $(touch)
 
 stamps/mpc_built: stamps/mpc_configured
+	@$(announce) && \
 	( cd build/mpc && $(MAKE) ) \
 	&& $(touch)
 
 stamps/mpc_installed: stamps/mpc_built
+	@$(announce) && \
 	( cd build/mpc && $(MAKE) install ) \
 	&& $(touch)
 
 stamps/mpc_checked: stamps/mpc_installed
+	@$(announce) && \
 	( cd build/mpc && $(MAKE) check ) \
 	&& $(touch)
 
 # ppl
 
 stamps/ppl_configured: stamps/gmp_checked
+	@$(announce) && \
 	( mkdir -p build/ppl && cd build/ppl && ../../$(PPL_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -203,16 +223,19 @@ stamps/ppl_configured: stamps/gmp_checked
 	&& $(touch)
 
 stamps/ppl_built: stamps/ppl_configured
+	@$(announce) && \
 	( cd build/ppl && $(MAKE) ) \
 	&& $(touch)
 
 stamps/ppl_installed: stamps/ppl_built
+	@$(announce) && \
 	( cd build/ppl && $(MAKE) install ) \
 	&& $(touch)
 
 # cloog
 
 stamps/cloog_configured: stamps/gmp_checked stamps/ppl_installed
+	@$(announce) && \
 	( mkdir -p build/cloog && cd build/cloog && \
 		../../$(CLOOG_DIR)/configure \
 			--host=$(HOST) \
@@ -227,20 +250,24 @@ stamps/cloog_configured: stamps/gmp_checked stamps/ppl_installed
 	&& $(touch)
 
 stamps/cloog_built: stamps/cloog_configured
+	@$(announce) && \
 	( cd build/cloog && $(MAKE) ) \
 	&& $(touch)
 
 stamps/cloog_installed: stamps/cloog_built
+	@$(announce) && \
 	( cd build/cloog && $(MAKE) install ) \
 	&& $(touch)
 
 stamps/cloog_checked: stamps/cloog_installed
+	@$(announce) && \
 	( cd build/cloog && $(MAKE) check ) \
 	&& $(touch)
 
 # gcc pre
 
 stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_checked stamps/mpc_checked stamps/ppl_installed stamps/cloog_checked stamps/binutils_installed
+	@$(announce) && \
 	( mkdir -p build/gcc_pre && cd build/gcc_pre && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
 		export NM_FOR_TARGET=$(TARGET)-nm && \
@@ -292,6 +319,7 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_
 	&& $(touch)
 
 stamps/gcc_pre_built: stamps/gcc_pre_configured
+	@$(announce) && \
 	( cd build/gcc_pre && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
 		export NM_FOR_TARGET=$(TARGET)-nm && \
@@ -301,12 +329,14 @@ stamps/gcc_pre_built: stamps/gcc_pre_configured
 	&& $(touch)
 
 stamps/gcc_pre_installed: stamps/gcc_pre_built
+	@$(announce) && \
 	( cd build/gcc_pre && $(MAKE) install ) \
 	&& $(touch)
 
 # newlib
 
 stamps/newlib_configured: stamps/gcc_pre_installed
+	@$(announce) && \
 	( mkdir -p build/newlib && cd build/newlib && \
 		export PATH=$$PATH:$(TEMPINST)/bin && \
 		../../$(NEWLIB_DIR)/configure \
@@ -323,12 +353,14 @@ stamps/newlib_configured: stamps/gcc_pre_installed
 	&& $(touch)
 
 stamps/newlib_built: stamps/newlib_configured
+	@$(announce) && \
 	( cd build/newlib && \
 		export PATH=$$PATH:$(TEMPINST)/bin && \
 		$(MAKE) ) \
 	&& $(touch)
 
 stamps/newlib_installed: stamps/newlib_built
+	@$(announce) && \
 	( cd build/newlib && \
 		export PATH=$$PATH:$(TEMPINST)/bin && \
 		$(MAKE) install ) \
@@ -337,6 +369,7 @@ stamps/newlib_installed: stamps/newlib_built
 # gcc post
 
 stamps/gcc_configured: stamps/newlib_installed
+	@$(announce) && \
 	( mkdir -p build/gcc_post && cd build/gcc_post && \
 		export AR_FOR_TARGET=$TARGET-ar && \
 		export NM_FOR_TARGET=$TARGET-nm && \
@@ -385,6 +418,7 @@ stamps/gcc_configured: stamps/newlib_installed
 	&& $(touch)
 
 stamps/gcc_built: stamps/gcc_configured
+	@$(announce) && \
 	( cd build/gcc_post && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
 		export NM_FOR_TARGET=$(TARGET)-nm && \
@@ -394,12 +428,14 @@ stamps/gcc_built: stamps/gcc_configured
 	&& $(touch)
 
 stamps/gcc_installed: stamps/gcc_built
+	@$(announce) && \
 	( cd build/gcc_post && $(MAKE) install ) \
 	&& $(touch)
 
 # tidyup
 
 stamps/tidyup: stamps/gcc_installed
+	@$(announce) && \
 	( find $(TEMPINST) -name libiberty.a -exec rm '{}' ';' && \
 		find $(TEMPINST) -name *.la -exec rm '{}' ';' && \
 		find $(TEMPINST)/bin -type f -perm /111 -exec strip '{}' ';' && \
@@ -410,7 +446,7 @@ stamps/tidyup: stamps/gcc_installed
 
 install: stamps/gcc_installed
 	@test -n "$(INSTPREFIX)" || ( echo "you need to define INSTPREFIX=/path/to/toolchain/instalation/dir/of/your/choice" && exit 1 )
-	@echo -n "installing at $(INSTPREFIX)... "
+	@echo -n "installing in $(INSTPREFIX)... "
 	@mkdir -p "$(INSTPREFIX)" && cp -r $(TEMPINST)/* "$(INSTPREFIX)/" && \
 		printf "export CROSS_COMPILE=$(TARGET)-\nexport PATH=\$$PATH:$(INSTPREFIX)/bin\n" >$(INSTPREFIX)/init.sh || exit 1
 	@echo "done"
