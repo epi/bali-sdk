@@ -83,6 +83,7 @@ stamps/binutils_configured: stamps/gmp_checked stamps/mpfr_checked stamps/cloog_
 		--with-ppl-lib="$(PREFIX)"/lib \
 		--with-cloog-include="$(PREFIX)"/include \
 		--with-cloog-lib="$(PREFIX)"/lib \
+		--disable-werror \
 		--disable-nls ) \
 	&& $(touch)
 
