@@ -127,8 +127,7 @@ stamps/gmp_configured: stamps/unpack_toolchain
 		--prefix=$(TEMPINST) \
 		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
-		--enable-cxx \
-		--disable-nls ) \
+		--enable-cxx ) \
 	&& $(touch)
 
 stamps/gmp_built: stamps/gmp_configured
@@ -157,7 +156,6 @@ stamps/mpfr_configured: stamps/gmp_checked
 		--prefix=$(TEMPINST) \
 		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
-		--disable-nls \
 		--with-gmp=$(TEMPINST) ) \
 	&& $(touch)
 
