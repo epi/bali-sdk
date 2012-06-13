@@ -40,9 +40,9 @@ HOST     := $(shell gcc -v 2>&1 | grep '\-\-build=' | sed -e 's/^.*--build=//' |
 TARGET   := arm-bada-eabi
 TEMPINST := $(shell pwd)/tempinst
 
-touch = mkdir -p stamps && touch $@
+touch = mkdir -p stamps && touch $@ && ( printf "\x1b[1;33;40m${@:stamps/%=%}\x1b[0m\n" >/dev/stderr )
 
-all: stamps/gcc_installed
+all: stamps/tidyup
 .PHONY: all
 
 # doc
@@ -68,6 +68,7 @@ stamps/binutils_configured: stamps/gmp_checked stamps/mpfr_checked stamps/cloog_
 		--build="$(HOST)" \
 		--target="$(TARGET)" \
 		--prefix="$(TEMPINST)" \
+		--libdir="$(TEMPINST)/lib" \
 		--with-pkgversion="$(PKGCONF)" \
 		--with-bugurl="$(BTURL)" \
 		--with-gmp-include="$(PREFIX)"/include \
@@ -394,6 +395,15 @@ stamps/gcc_built: stamps/gcc_configured
 
 stamps/gcc_installed: stamps/gcc_built
 	( cd build/gcc_post && $(MAKE) install ) \
+	&& $(touch)
+
+# tidyup
+
+stamps/tidyup: stamps/gcc_installed
+	( find $(TEMPINST) -name libiberty.a -exec rm '{}' ';' && \
+		find $(TEMPINST) -name *.la -exec rm '{}' ';' && \
+		find $(TEMPINST)/bin -type f -perm /111 -exec strip '{}' ';' && \
+		find $(TEMPINST)/$(TARGET)/bin -type f -perm /111 -exec strip '{}' ';' ) \
 	&& $(touch)
 
 # install
