@@ -32,7 +32,7 @@ MPC_DIR           := src/mpc-0.9
 NEWLIB_DIR        := src/newlib-1.19.0
 
 PKGCONF           := bada
-BUGURL            := https://support.codesourcery.com/GNUToolchain/
+BUGURL            := 
 
 ASCIIDOC           = asciidoc -o $@ -a doctime
 
@@ -40,9 +40,9 @@ HOST     := $(shell gcc -v 2>&1 | grep '\-\-build=' | sed -e 's/^.*--build=//' |
 TARGET   := arm-bada-eabi
 TEMPINST := $(shell pwd)/tempinst
 
-touch = mkdir -p stamps && touch $@
+touch = mkdir -p stamps && touch $@ && ( printf "\x1b[1;33;40m${@:stamps/%=%}\x1b[0m\n" >/dev/stderr )
 
-all: stamps/gcc_installed
+all: stamps/tidyup
 .PHONY: all
 
 # doc
@@ -58,22 +58,30 @@ stamps/unpack_main: $(MAIN_ARCHIVE)
 	unzip $(MAIN_ARCHIVE) $(TOOLCHAIN_ARCHIVE) && $(touch)
 
 stamps/unpack_toolchain: stamps/unpack_main
-	tar jxf $(TOOLCHAIN_ARCHIVE)
---exclude="build*.sh" && $(touch)
+	tar jxf $(TOOLCHAIN_ARCHIVE) --exclude="build*.sh" && $(touch)
 
 # binutils
 
-stamps/binutils_configured: stamps/unpack_toolchain
+stamps/binutils_configured: stamps/gmp_checked stamps/mpfr_checked stamps/cloog_checked stamps/mpc_checked stamps/ppl_installed
 	( mkdir -p build/binutils && cd build/binutils && ../../$(BINUTILS_DIR)/configure \
 		--host="$(HOST)" \
 		--build="$(HOST)" \
 		--target="$(TARGET)" \
 		--prefix="$(TEMPINST)" \
+		--libdir="$(TEMPINST)/lib" \
 		--with-pkgversion="$(PKGCONF)" \
 		--with-bugurl="$(BTURL)" \
-		--disable-nls \
-		--disable-werror \
-		--disable-poison-system-directories ) \
+		--with-gmp-include="$(PREFIX)"/include \
+		--with-gmp-lib="$(PREFIX)"/lib \
+		--with-mpfr-include="$(PREFIX)"/include \
+		--with-mpfr-lib="$(PREFIX)"/lib \
+		--with-mpc-include="$(PREFIX)"/include \
+		--with-mpc-lib="$(PREFIX)"/lib \
+		--with-ppl-include="$(PREFIX)"/include \
+		--with-ppl-lib="$(PREFIX)"/lib \
+		--with-cloog-include="$(PREFIX)"/include \
+		--with-cloog-lib="$(PREFIX)"/lib \
+		--disable-nls ) \
 	&& $(touch)
 
 stamps/binutils_built: stamps/binutils_configured
@@ -101,18 +109,18 @@ stamps/zlib_installed: stamps/zlib_built
 
 # gmp
 
-#		--target=$(TARGET) \
-
 stamps/gmp_configured: stamps/unpack_toolchain
 	( mkdir -p build/gmp && cd build/gmp && \
 		export LD_LIBRARY_PATH=$(TEMPINST)/lib:"$$LD_LIBRARY_PATH" && \
 		../../$(GMP_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
+		--target=$(HOST) \
 		--prefix=$(TEMPINST) \
 		--libdir=$(TEMPINST)/lib \
 		--disable-shared \
-		--enable-cxx ) \
+		--enable-cxx \
+		--disable-nls ) \
 	&& $(touch)
 
 stamps/gmp_built: stamps/gmp_configured
@@ -123,9 +131,13 @@ stamps/gmp_installed: stamps/gmp_built
 	( cd build/gmp && $(MAKE) install ) \
 	&& $(touch)
 
+stamps/gmp_checked: stamps/gmp_installed
+	( cd build/gmp && $(MAKE) CFLAGS='-O2 -g' check ) \
+	&& $(touch)
+
 # mpfr
 
-stamps/mpfr_configured: stamps/gmp_installed
+stamps/mpfr_configured: stamps/gmp_checked
 	( mkdir -p build/mpfr && cd build/mpfr && ../../$(MPFR_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -145,9 +157,13 @@ stamps/mpfr_installed: stamps/mpfr_built
 	( cd build/mpfr && $(MAKE) install ) \
 	&& $(touch)
 
+stamps/mpfr_checked: stamps/mpfr_installed
+	( cd build/mpfr && $(MAKE) check ) \
+	&& $(touch)
+
 # mpc
 
-stamps/mpc_configured: stamps/gmp_installed stamps/mpfr_installed
+stamps/mpc_configured: stamps/gmp_checked stamps/mpfr_checked
 	( mkdir -p build/mpc && cd build/mpc && ../../$(MPC_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -168,9 +184,13 @@ stamps/mpc_installed: stamps/mpc_built
 	( cd build/mpc && $(MAKE) install ) \
 	&& $(touch)
 
+stamps/mpc_checked: stamps/mpc_installed
+	( cd build/mpc && $(MAKE) check ) \
+	&& $(touch)
+
 # ppl
 
-stamps/ppl_configured: stamps/gmp_installed
+stamps/ppl_configured: stamps/gmp_checked
 	( mkdir -p build/ppl && cd build/ppl && ../../$(PPL_DIR)/configure \
 		--host=$(HOST) \
 		--build=$(HOST) \
@@ -192,7 +212,7 @@ stamps/ppl_installed: stamps/ppl_built
 
 # cloog
 
-stamps/cloog_configured: stamps/gmp_installed stamps/ppl_installed
+stamps/cloog_configured: stamps/gmp_checked stamps/ppl_installed
 	( mkdir -p build/cloog && cd build/cloog && \
 		../../$(CLOOG_DIR)/configure \
 			--host=$(HOST) \
@@ -207,18 +227,20 @@ stamps/cloog_configured: stamps/gmp_installed stamps/ppl_installed
 	&& $(touch)
 
 stamps/cloog_built: stamps/cloog_configured
-	( cd build/cloog && \
-		$(MAKE) ) \
+	( cd build/cloog && $(MAKE) ) \
 	&& $(touch)
 
 stamps/cloog_installed: stamps/cloog_built
-	( cd build/cloog && \
-		$(MAKE) install ) \
+	( cd build/cloog && $(MAKE) install ) \
+	&& $(touch)
+
+stamps/cloog_checked: stamps/cloog_installed
+	( cd build/cloog && $(MAKE) check ) \
 	&& $(touch)
 
 # gcc pre
 
-stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpfr_installed stamps/mpc_installed stamps/ppl_installed stamps/cloog_installed stamps/binutils_installed
+stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_checked stamps/mpfr_checked stamps/mpc_checked stamps/ppl_installed stamps/cloog_checked stamps/binutils_installed
 	( mkdir -p build/gcc_pre && cd build/gcc_pre && \
 		export AR_FOR_TARGET=$(TARGET)-ar && \
 		export NM_FOR_TARGET=$(TARGET)-nm && \
@@ -230,9 +252,7 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--build=$(HOST) \
 			--host=$(HOST) \
 			--target=$(TARGET) \
-			--enable-threads \
 			--disable-libmudflap \
-			--disable-libssp \
 			--disable-libstdcxx-pch \
 			--enable-extra-sgxx-multilibs \
 			--with-mode=arm \
@@ -241,16 +261,20 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--with-gnu-as \
 			--with-gnu-ld \
 			--with-specs='%{save-temps: -fverbose-asm}' \
-			--enable-languages=c,c++ \
-			--enable-shared \
 			--disable-lto \
-			--with-newlib \
 			--with-pkgversion="$(PKGCONF)" \
 			--with-bugurl="$(BTURL)" \
 			--disable-nls \
 			--prefix=$(TEMPINST) \
-			--with-headers=yes \
-			--enable-decimal-float=bid \
+			--disable-shared \
+			--disable-threads \
+			--disable-libssp \
+			--disable-libgomp \
+			--without-headers \
+			--with-newlib \
+			--disable-decimal-float \
+			--disable-libffi \
+			--enable-languages=c \
 			--with-gmp-include=$(TEMPINST)/include \
 			--with-gmp-lib=$(TEMPINST)/lib \
 			--with-mpfr-include=$(TEMPINST)/include \
@@ -261,7 +285,6 @@ stamps/gcc_pre_configured: stamps/zlib_installed stamps/gmp_installed stamps/mpf
 			--with-ppl-lib=$(TEMPINST)/lib \
 			--with-host-libstdcxx="-static-libgcc -Wl,-Bstatic,-lstdc++,-Bdynamic -lm" \
 			--with-cloog=$(TEMPINST) \
-			--disable-libgomp \
 			--enable-poison-system-directories \
 			--with-build-time-tools=$(TEMPINST)/$(TARGET)/bin \
 			--with-pic=yes \
@@ -372,6 +395,15 @@ stamps/gcc_built: stamps/gcc_configured
 
 stamps/gcc_installed: stamps/gcc_built
 	( cd build/gcc_post && $(MAKE) install ) \
+	&& $(touch)
+
+# tidyup
+
+stamps/tidyup: stamps/gcc_installed
+	( find $(TEMPINST) -name libiberty.a -exec rm '{}' ';' && \
+		find $(TEMPINST) -name *.la -exec rm '{}' ';' && \
+		find $(TEMPINST)/bin -type f -perm /111 -exec strip '{}' ';' && \
+		find $(TEMPINST)/$(TARGET)/bin -type f -perm /111 -exec strip '{}' ';' ) \
 	&& $(touch)
 
 # install
