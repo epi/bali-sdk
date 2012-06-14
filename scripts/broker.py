@@ -59,11 +59,14 @@ class SamsungWave:
 		# dsrdtr is ignored on Linux, but here it is included to remind you that the
 		# original broker enables it
 		self._ser = serial.Serial(port, 115200, timeout = 1, dsrdtr = 1, rtscts = 1)
-		self._serx = serial.Serial(port, 115200, timeout = 0, dsrdtr = 1, rtscts = 1)
 		self._ser.flushInput()
 		self._ser.flushOutput()
 		self._recbufs = { 'AT+': [], 'raw': [], 'PHONESTATUS': [], 'PROCESSMGR': [] }
 		self._logf = file('broker.log', 'w')
+		self._serx = serial.Serial('/dev/ttyACM1', 115200, timeout = 1, dsrdtr = 1, rtscts = 1)
+		self._serx.write('AT+WINCOMM\r')
+		self._serx.flushInput()
+		self._serx.flushOutput()
 
 	def _sread(self, b = 1):
 		a = self._ser.read(b)
@@ -239,7 +242,6 @@ class SamsungWave:
 		r = struct.unpack("<iHH", r[2:10]) + (r[10:],)
 		return r
 
-
 	def sendFile(self, localFileName, remoteFileName):
 		"""
 		"""
@@ -380,6 +382,15 @@ def install(appid):
 		print 'Installed'
 	else:
 		print 'Failed to install'
+
+	res = wave.appRun(appid, 'PlayEmAll.exe')
+	while True:
+		while True:
+			q = wave._serx.readline()
+			if q:
+				print string.strip(q)
+			else:
+				break
 
 def main():
 	if len(sys.argv) >= 2:
