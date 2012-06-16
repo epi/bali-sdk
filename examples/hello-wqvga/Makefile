@@ -32,10 +32,10 @@ CC                 := $(CROSS_COMPILE)gcc
 CXX                := $(CROSS_COMPILE)g++
 CPP                := $(CROSS_COMPILE)cpp
 
-CPPFLAGS           := -DSHP -I. -I"$(bada_include_path)"
+CPPFLAGS           := -DSHP -D_DEBUG -I. -I"$(bada_include_path)"
 CFLAGS             := -O2 -Wall -fpic -fno-dwarf2-cfi-asm -fshort-wchar -march=armv5te -mlittle-endian -mthumb -mthumb-interwork -mfloat-abi=soft
 CXXFLAGS           := -O2 -Wall -fpic -fno-dwarf2-cfi-asm -fshort-wchar -march=armv5te -mlittle-endian -mthumb -mthumb-interwork -mfloat-abi=soft
-LDFLAGS            := -nostartfiles -Wl,-u__gnu_thumb1_case_si,-u__gnu_thumb1_case_sqi,-u__gnu_thumb1_case_uqi,-u__gnu_thumb1_case_shi,-u__gnu_thumb1_case_uhi -shared -lgcc_sa
+LDFLAGS            := -nostartfiles -Wl,-u__gnu_thumb1_case_si,-u__gnu_thumb1_case_sqi,-u__gnu_thumb1_case_uqi,-u__gnu_thumb1_case_shi,-u__gnu_thumb1_case_uhi -shared
 
 LIBOBJS            += $(bada_model_path)/WaveWQVGA/Target/osp_rt0.a
 LIBOBJS            += $(bada_model_path)/WaveWQVGA/Target/FOsp.so
@@ -51,19 +51,19 @@ $(bada_signature): $(bada_appexe) $(bada_hashtable) $(bada_manifest)
 	@echo SIGN $@ && mkdir -p $(dir $@) && $(BADA_SIGNING) --app-path="$(bada_appdir)" --app-name="$(APPNAME)" --crypto-path="$(bada_crypto_path)" --output="$@"
 
 $(bada_appexe): $(cxx_objs) $(c_objs)
-	@echo LD   $@ && mkdir -p $(dir $@) && $(LD) $(LDFLAGS) $^ $(LIBOBJS) -o $@
+	@echo LD   $@ && mkdir -p $(dir $@) && $(LD) $(LDFLAGS) $^ $(LIBOBJS) -lgcc_sa -o $@
 
 build/%.dep: %
-	@echo CPP  $@ && mkdir -p $(dir $@) && $(CPP) -MM $< $(CPPFLAGS) | sed "s,\(.*\)\.o[ :]*,$(@D)/\1.o $@ : ,g" >$@
+	@echo DEP  $@ && mkdir -p $(dir $@) && $(CPP) -MM $< $(CPPFLAGS) | sed "s,\(.*\)\.o[ :]*,$(@D)/\1.o $@ : ,g" >$@
 
 build/%.o: %.cpp
-	@echo C++  $@ && mkdir -p $(dir $@) && $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
+	@echo CXX  $@ && mkdir -p $(dir $@) && $(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
 build/%.o: %.c
 	@echo CC   $@ && mkdir -p $(dir $@) && $(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 install: all
-	@echo INSTALL && $(BADA_BROKER) install $(APPID)
+	@echo INSTALL && $(BADA_BROKER) install $(APPID) $(APPNAME).exe
 .PHONY: install
 
 -include $(deps)

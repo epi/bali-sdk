@@ -12,8 +12,7 @@ Form1::~Form1(void)
 {
 }
 
-bool
-Form1::Initialize()
+bool Form1::Initialize()
 {
 	// Construct an XML form
 	Construct(L"IDF_FORM1");
@@ -21,8 +20,7 @@ Form1::Initialize()
 	return true;
 }
 
-result
-Form1::OnInitializing(void)
+result Form1::OnInitializing(void)
 {
 	result r = E_SUCCESS;
 
@@ -39,8 +37,7 @@ Form1::OnInitializing(void)
 	return r;
 }
 
-result
-Form1::OnTerminating(void)
+result Form1::OnTerminating(void)
 {
 	result r = E_SUCCESS;
 
@@ -49,19 +46,15 @@ Form1::OnTerminating(void)
 	return r;
 }
 
-void
-Form1::OnActionPerformed(const Osp::Ui::Control& source, int actionId)
+void Form1::OnActionPerformed(const Osp::Ui::Control& source, int actionId)
 {
 	switch(actionId)
 	{
 	case ID_BUTTON_OK:
-		{
-			AppLog("OK Button is clicked! \n");
-		}
+		AppLog("OK Button is clicked!\n");
 		break;
 	default:
 		break;
 	}
 }
-
 

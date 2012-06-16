@@ -20,12 +20,10 @@ extern void end_profile (void);
 #define end_profile()
 #endif
 
-
 /**
  * The entry function of bada application called by the operating system.
  */
-int
-OspMain(int argc, char *pArgv[])
+int OspMain(int argc, char *pArgv[])
 {
 	result r = E_SUCCESS;
 

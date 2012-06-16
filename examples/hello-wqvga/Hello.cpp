@@ -71,30 +71,26 @@ void Hello::OnBackground(void)
 	// Stop drawing when the application is moved to the background.
 }
 
-void
-Hello::OnLowMemory(void)
+void Hello::OnLowMemory(void)
 {
 	// TODO:
 	// Free unused resources or close the application.
 }
 
-void
-Hello::OnBatteryLevelChanged(BatteryLevel batteryLevel)
+void Hello::OnBatteryLevelChanged(BatteryLevel batteryLevel)
 {
 	// TODO:
 	// Handle any changes in battery level here.
 	// Stop using multimedia features(camera, mp3 etc.) if the battery level is CRITICAL.
 }
 
-void
-Hello::OnScreenOn (void)
+void Hello::OnScreenOn (void)
 {
 	// TODO:
 	// Get the released resources or resume the operations that were paused or stopped in OnScreenOff().
 }
 
-void
-Hello::OnScreenOff (void)
+void Hello::OnScreenOff (void)
 {
 	// TODO:
 	//  Unless there is a strong reason to do otherwise, release resources (such as 3D, media, and sensors) to allow the device to enter the sleep mode to save the battery.

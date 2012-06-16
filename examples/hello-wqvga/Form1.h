@@ -26,4 +26,4 @@ public:
 	virtual void OnActionPerformed(const Osp::Ui::Control& source, int actionId);
 };
 
-#endif	//_FORM1_H_
+#endif // _FORM1_H_
