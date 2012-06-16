@@ -73,7 +73,7 @@ class SamsungWave:
 		n = -1
 		if not a is None:
 			n = len(a)
-		self._logf.write('read:  %5d %5d %s\n' % (b, n, toHex(a)))
+		self._logf.write('read:  %5d %5d %s\n' % (b, n, repr(a)))
 		return a
 
 	def _sreadline(self):
@@ -81,12 +81,12 @@ class SamsungWave:
 		n = -1
 		if not a is None:
 			n = len(a)
-		self._logf.write('readl:       %5d %s\n' % (len(a), toHex(a)))
+		self._logf.write('readl:       %5d %s\n' % (len(a), repr(a)))
 		return a
 
 	def _swrite(self, b):
 		a = self._ser.write(b)
-		self._logf.write('write: %5d       %s\n' % (len(b), toHex(b)))
+		self._logf.write('write: %5d       %s\n' % (len(b), repr(b)))
 		return a
 
 	def _receive(self, channel, timeout = 1):
@@ -337,7 +337,7 @@ class SamsungWave:
 				t = ''
 			print "%8d %s%s" % (f[1], f[2], t)
 
-def install(appid):
+def install(appid, exename):
 	wave = SamsungWave()
 	print wave.getModel()
 	print wave.getUserMem()
@@ -383,7 +383,7 @@ def install(appid):
 	else:
 		print 'Failed to install'
 
-	res = wave.appRun(appid, 'PlayEmAll.exe')
+	res = wave.appRun(appid, exename)
 	while True:
 		while True:
 			q = wave._serx.readline()
@@ -411,8 +411,7 @@ def main():
 				wave.deleteFile(filename)
 			exit(0)
 		elif sys.argv[1] == 'install':
-			for appid in sys.argv[2:]:
-				install(appid)
+			install(sys.argv[2], sys.argv[3])
 			exit(0)
 		else:
 			print 'Error: unknown command: %s' % sys.argv[1]
