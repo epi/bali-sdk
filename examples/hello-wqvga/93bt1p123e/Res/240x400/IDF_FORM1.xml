@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE Scene SYSTEM "UIForm.dtd">
+
+<Scene Bversion="2.0.0.v20110523" Dversion="20100701">
+    <Form id="IDF_FORM1">
+        <property
+        	BGColor=""
+        	BGColorOpacity="100"
+        	Orientation="Automatic"
+        	softKey0NormalIcon=""
+        	softKey0PressedIcon=""
+        	softKey0Text=""
+        	softKey1NormalIcon=""
+        	softKey1PressedIcon=""
+        	softKey1Text=""
+        	title="Hello bali-sdk!"
+        	titleAlign="ALIGN_CENTER"
+        	titleIcon=""/>
+        <layout mode="Portrait" style="FORM_STYLE_TITLE|FORM_STYLE_INDICATOR"/>
+        <layout mode="Landscape" style="FORM_STYLE_TITLE|FORM_STYLE_INDICATOR"/>
+    </Form>
+    <Button id="IDC_BUTTON_OK" parent="IDF_FORM1">
+        <property
+        	DisabledBitmapPath=""
+        	NormalBGBitmapPath=""
+        	NormalBitmapPath=""
+        	PressedBGBitmapPath=""
+        	PressedBitmapPath=""
+        	disableTextColor=""
+        	disabledColor=""
+        	disabledColorOpacity="100"
+        	hAlign="ALIGN_CENTER"
+        	highlightedBGBitmapPath=""
+        	highlightedColor=""
+        	highlightedColorOpacity="100"
+        	highlightedTextColor=""
+        	normalColor=""
+        	normalColorOpacity="100"
+        	normalTextColor=""
+        	pressedColor=""
+        	pressedColorOpacity="100"
+        	pressedTextColor=""
+        	text="OK"
+        	textSize="14"
+        	vAlign="ALIGN_MIDDLE"/>
+        <layout height="45" mode="Portrait" width="120" x="60" y="118"/>
+        <layout height="51" mode="Landscape" width="200" x="100" y="54"/>
+    </Button>
+</Scene>
