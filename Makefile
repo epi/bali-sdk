@@ -443,12 +443,23 @@ stamps/tidyup: stamps/gcc_installed
 
 # install
 
-install: stamps/gcc_installed
+install: stamps/tidyup
 	@test -n "$(INSTPREFIX)" || ( echo "you need to define INSTPREFIX=/path/to/toolchain/instalation/dir/of/your/choice" && exit 1 )
+	@test -n "$(WINSDKDIR)" || ( echo "you need to define WINSDKDIR=/path/to/bada/installation/on/a/windows/partition" && exit 1 )
 	@echo -n "installing in $(INSTPREFIX)... "
-	@mkdir -p "$(INSTPREFIX)" && cp -r $(TEMPINST)/* "$(INSTPREFIX)/" && \
-		printf "export CROSS_COMPILE=$(TARGET)-\nexport PATH=\$$PATH:$(INSTPREFIX)/bin\n" >$(INSTPREFIX)/init.sh || exit 1
-	@echo "done"
+	@( mkdir -p "$(INSTPREFIX)" && cp -r $(TEMPINST)/* "$(INSTPREFIX)/" && \
+		printf "export CROSS_COMPILE=$(TARGET)-\nexport PATH=\$$PATH:$(INSTPREFIX)/bin\n" >$(INSTPREFIX)/init.sh && \
+		rm -rf "$(INSTPREFIX)/$(TARGET)/include/bada" && \
+		cp -r "$(WINSDKDIR)/Include" "$(INSTPREFIX)/$(TARGET)/include/bada" && \
+		mkdir -p "$(INSTPREFIX)/usr/share/bada/crypto" && \
+		cp -r "$(WINSDKDIR)/Tools/sbuild/"*.cer "$(INSTPREFIX)/usr/share/bada/crypto/" && \
+		cp -r "$(WINSDKDIR)/Tools/sbuild/"*.pem "$(INSTPREFIX)/usr/share/bada/crypto/" && \
+		cp "$(WINSDKDIR)/Tools/Toolchains/ARM/lib/gcc/$(TARGET)/4.5.3/libgcc_sa.a" "$(INSTPREFIX)/lib/gcc/$(TARGET)/4.5.3/" && \
+		mkdir -p "$(INSTPREFIX)/usr/share/bada/model" && \
+		( for model in `ls $(WINSDKDIR)/Model`; do mkdir -p "$(INSTPREFIX)/usr/share/bada/model/$$model" && cp -r "$(WINSDKDIR)/Model/$$model/Target" "$(INSTPREFIX)/usr/share/bada/model/$$model"; done ) && \
+		( for f in genhtb signing broker; do cp scripts/$f.py "$(INSTPREFIX)/bin/bada-$f"; done ) || \
+		exit 1 ) && \
+	echo "done"
 	
 # clean
 
