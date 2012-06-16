@@ -62,7 +62,7 @@ build/%.o: %.cpp
 build/%.o: %.c
 	@echo CC   $@ && mkdir -p $(dir $@) && $(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-install:
+install: all
 	@echo INSTALL && $(BADA_BROKER) install $(APPID)
 .PHONY: install
 
