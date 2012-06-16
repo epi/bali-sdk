@@ -4,6 +4,9 @@
 bali-sdk
 ========
 
+NO WARRANTY
+-----------
+
 ULTRA IMPORTANT WARNING! THIS PROJECT COMES WITH NO RESPONSIBILITY OR WARRANTY OF ANY KIND!
 YOU USE IT AT YOUR SOLE OWN RISK. IN PARTICULAR, YOU ARE THE ONLY RESPONSIBLE IF YOU BRICK YOUR
 DEVICE, LOSE ANY DATA FROM YOUR PHONE, COMPUTER OR NETWORK, LOSE SUPPORT OR WARRANTY FROM SAMSUNG
@@ -12,11 +15,30 @@ ANY PART OF THIS PROJECT BREAKS ANY AGREEMENT YOU HAVE MADE OR ANY LAW YOU ARE S
 
 You have been warned.
 
+Gifts for the author(s)
+-----------------------
+
+Hacking is fun, but you may also use +bali-sdk+ to make money. If your app gives you some profit,
+remember those who made it possible. I like reading, so a gift card to an online bookstore or the like
+would be a nice way to say `thank you for your buggy scripts'.
+Also, the GNU tools are a result of years of hard work credited to the Free Software Foundation,
+so consider sending them a buck or maybe a hundred if you appreciate it.
+Samsung guys take their piece of the pie on their own, so you don't need to support them further.
+
+
+bali-sdk: Making bada app development free
+------------------------------------------
+
 Tired of switching to Windows, waiting minutes for response from sluggish Eclipse when you press a key,
 and hours when you build your app after changing just a single line of code? This project is for you!
 
-It's still a work in progress, and not everything has been ported yet, but I've already managed to
-build a not-so-simple app, sign it, and install it on my phone. Now you can do it as well!
+It's still a work in progress, but it already let's you build your app, sign it, and install it on your phone.
+GNU toolchain feels better in its natural environment, and it expresses its gratitude by building
+your applications faster. Together with the additional simple scripts, they let you organize your
+build environment the way you like it. Whether you prefer to type +make+ in the console or click
+a button in your favourite IDE to build your project, you can do it.
+If you already have scripts for building your apps for a few platforms,
+you can now extend them to add one more platform - bada.
 
 Warning! This is not a one-click solution. Because of license issues, I do NOT include any
 files from Samsung. You still need to have your own copy of bada IDE downloaded
@@ -29,9 +51,24 @@ Last but not least, I do not plan to include a simulator in this project. Real m
 Toolchain
 ---------
 
-You need GNU Make and bada SDK sources from http://opensource.samsung.com/[opensource.samsung.com].
-The Makefile has been tested only with +bada_SDK_2.0.0.zip+.
-Download the zip file to the directory where Makefile resides.
+Prerequisites
+~~~~~~~~~~~~~
+
+First of all, you need a native GNU toolchain already installed on your system.
+For example, if you use Ubuntu, make sure someone installed the +build-essential+ package for you.
+
+Download the +bada_SDK_2.0.0.zip+ archive from http://opensource.samsung.com/[opensource.samsung.com]
+to the directory where Makefile resides.
+
+The last thing you need is a working installation of the original bada SDK on some Windows machine.
+If you have it on a different computer, mount the folder using SAMBA. If it's on a separate partition,
+mount it using NTFS-3G. If it's in a virtual machine shared folder, uff, it's already mounted.
+The path to the folder, where folders such as +Samples+ and +Tools+ are, will be now referred to
+as "the path to the original installation".
+
+Building
+~~~~~~~~
+
 Run +make+, and make sure your machine is busy, because otherwise you will die of starvation waiting until
 the build completes:
 
@@ -48,23 +85,31 @@ you have to specify its name explicitly, e.g.:
 $ make MAIN_ARCHIVE=bada_SDK_6.6.6.zip -j16
 --------------
 
-It's likely that it fails at some point. In such case, you can run it again without +-j+ option,
-to see where it fails. Most likely, the +configure+ options given to one of the packages
-are not correct and just worked for me accidentially. Examine, investigate, try again and report, please!
+It's likely that the build process will fail at some point. In such case, you can run it again without the +-j+ option,
+in order to see where it fails. Most likely, the +configure+ options given to one of the packages
+are not correct and just worked for me accidentially. Even if they are copy-pasted from Samsung's
+build scripts, it doesn't mean they are OK. Examine, investigate, try again and report, please!
 
-If you're lucky enough, the build completes successfully, and you can now copy the toolchain to
-a reasonable location within your file system, e.g.:
+Installation
+~~~~~~~~~~~~
+
+If you're lucky enough, the build completes successfully, and you can now install the toolchain.
+The installation consists in combining the files just compiled with some files from the original
+installation. You need to specify the destination folder as well as the path to the original installation.
+Example:
 
 --------------
-# make INSTPREFIX=/opt/samwave install
+# make install INSTPREFIX=/opt/bali-sdk WINSDKDIR=/home/badahacker/vboxshare/bada/2.0.5
 --------------
 
-The tools will not be available always. To use the toolchain in a currently active terminal, type:
+To avoid messing up the way your system works, using the toolchain requires an extra step.
+In a currently active terminal, type the following:
 
 --------------
-$ source /opt/samwave/init.sh
+$ source /opt/bali-sdk/init.sh
 --------------
 
+Don't forget to substitute +/opt/bali-sdk+ with the path that you choose as +INSTPREFIX+ in +make install+.
 This tiny script sets +$PATH+ and +$CROSS_COMPILE+ environment variables to make building your applications easier.
 Now you can try:
 
@@ -73,21 +118,72 @@ $ ${CROSS_COMPILE}gcc
 arm-bada-eabi-gcc: no input files
 --------------
 
+Scripts
+~~~~~~~
 
-Libraries
----------
++bali-sdk+ includes three scripts which perform the subsequent steps required before you
+can actually run your application on your phone. All of them were based upon the
+observation of what the Samsung bada SDK does when you press the Run button in Eclipse.
+Thus, they should not be considered reliable and may likely cause your phone to refuse to
+install or run the application. They may also change your phone into a shiny paperweight,
+which you probably do not want, so think twice and be careful. In case you're angry at me,
+please refer to the warning at the top of this README.
 
-To be documented.
++bada-genhtb+
+^^^^^^^^^^^^^
 
-Signing your application
-------------------------
+This one generates the +.htb+ (HashTaBle) file for your application. Once you build your app,
+you need to generate a hashtable file. Your phone uses it as a part of the application
+verification process. To generate the hashtable file from the executable and manifest files,
+run the following command:
 
-To be documented.
+--------------
+$ bada-genhtb path/to/manifest.xml path/to/YourApp.exe path/to/YourApp.htb
+--------------
 
-Installing your application on device
--------------------------------------
++bada-signing+
+^^^^^^^^^^^^^^
 
-To be documented.
+This one generates the +signature.xml+ file. Run it without parameters to see
+how to use it.
+
++bada-broker+
+^^^^^^^^^^^^^
+
+Finally, this one installs the application on your device. Before you use it,
+you need to prepare a directory structure similar to the following:
+
+--------------
+app-id/Data/(optional data files used by your app)
+app-id/Res/(any resources used by your app, e.g. XML forms, icons, splash image)
+app-id/Info/manifest.xml
+app-id/Info/application.xml
+app-id/Info/YourApp.htb
+app-id/Bin/YourApp.exe
+app-id/signature.xml
+--------------
+
+Even if you don't have anything to put into Data and Res folders, you must create them.
+They may be empty, but not missing.
+
+Once you got the above files, use +bada-broker+ to install and run your app:
+
+--------------
+$ bada-broker install app-id YourApp.exe
+--------------
+
+It will show what it does to install the app, and then it will print any debug messages
+your application produces. It also logs all the messages it exchanges with the device.
+Attach the log to any bug report you submit.
+
+Example
+-------
+
+In the +examples+ folder, you will find a complete "Hello, World!" program together
+with its +Makefile+. The +Makefile+ is particularly interesting for you, because it
+shows you what you need to do, how to do it, and in what order. It's made for the
+WQVGA profile (low-end devices) and 1.1 API. It works on Wave723 and should work
+on other WQVGA devices as well. Any remarks concerning other models will be appreciated.
 
 License and other legal bullshit
 --------------------------------
