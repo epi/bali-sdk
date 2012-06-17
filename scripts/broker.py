@@ -119,7 +119,12 @@ class SamsungWave:
 						int(mo.group(4)),
 						mo.group(5)))
 				else:
-					self._recbufs['raw'].append(r[0:-1])
+					mo = re.match("\x04\[[0-9]+:[0-9]+\]", r)
+					if mo:
+						# ignore
+						pass
+					else:
+						self._recbufs['raw'].append(r[0:-1])
 		return self._recbufs[channel].pop(0)
 
 	def _AT(self, command):
@@ -186,7 +191,6 @@ class SamsungWave:
 			r = self._receive('PHONESTATUS', 3)
 			if r is None:
 				return False
-			print r
 			mo = re.search('errType=([0-9]+)', r[4])
 			if mo:
 				return mo.group(1) == '0'
@@ -209,7 +213,6 @@ class SamsungWave:
 		self._send(4, '[0:2]MID_DIAGMGR,0xFF')
 		self._send(4, '[0:2]MID_DIAGMGR,0xFF')
 		r = self._receive('PHONESTATUS', 10)
-		print r
 		mo = re.search('errType=([0-9]+)', r[4])
 		if not mo:
 			raise InvalidResponseError(r)
@@ -235,9 +238,11 @@ class SamsungWave:
 		"""
 		"""
 		self._send(0x30, struct.pack("<BB", cmd, 0) + payload)
-		r = self._receive('raw')
+		r = self._receive('raw', 5)
+		if not r:
+			raise TimeoutError, 'No response on file command'
 		if ord(r[0]) != 0x30 or ord(r[1]) != (cmd | 0xe0):
-			print "Warning: Invalid response for file command %02x: %s" % (cmd, toHex(r))
+			print "Warning: Invalid response for file command %02x: %s" % (cmd, repr(r))
 			return None
 		r = struct.unpack("<iHH", r[2:10]) + (r[10:],)
 		return r
@@ -288,7 +293,7 @@ class SamsungWave:
 		ans = self._fileCommand(0x05, "%s\x00" % remoteDirName)
 		if ans[0] < 0:
 			print "Error: create directory:", ans
-		if ans[1:3] != (3, 6):
+		if ans[1] != 3:
 			print "Warning: create directory:", ans
 
 	def deleteDirectory(self, remoteDirName, recursive = False):
@@ -325,10 +330,6 @@ class SamsungWave:
 				break
 			yield attr, size, name
 
-	def _printport1(self):
-		print toHex(self._serx.read(100000))
-		print "ok"
-
 	def listFiles(self, remoteDirName):
 		for f in self.readDirectory(remoteDirName):
 			if f[0] == 2:
@@ -348,8 +349,11 @@ def install(appid, exename):
 	# TODO: Compute the real total size of the app.
 	wave.isInstallationPossible(appid, 1048576)
 
-	print wave.appTerminate(appid)
+	wave.appTerminate(appid)
 
+	# TODO: These paths look like someone did the concatenation the wrong way.
+	# This is how the original Broker.exe does the thing,
+	# and maybe we should fix it.
 	for fil in [
 		"/Osp/Applications/" + appid + "/Data/memdebug_report.txt",
 		"/Osp/Applications/" + appid + "/Data/Bin/core",
