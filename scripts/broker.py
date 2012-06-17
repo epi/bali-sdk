@@ -339,10 +339,15 @@ class SamsungWave:
 
 def install(appid, exename):
 	wave = SamsungWave()
+	# TODO: The following commands should be used to determine
+	# whether the application is likely to run on the connected device.
+	# For now we'll just exchange some messages to see if the
+	# device seems to support the protocol and we'll display some info.
 	print wave.getModel()
-	print wave.getUserMem()
 	print wave.getLcdInfo()
-	print wave.isInstallationPossible(appid, 440952)
+	# TODO: Compute the real total size of the app.
+	wave.isInstallationPossible(appid, 1048576)
+
 	print wave.appTerminate(appid)
 
 	for fil in [
