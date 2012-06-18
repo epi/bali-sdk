@@ -61,58 +61,54 @@ class SamsungWave:
 		self._ser = serial.Serial(port, 115200, timeout = 1, dsrdtr = 1, rtscts = 1)
 		self._ser.flushInput()
 		self._ser.flushOutput()
-		self._recbufs = { 'AT+': [], 'raw': [], 'PHONESTATUS': [], 'PROCESSMGR': [] }
+		self._recbufs = { 'AT+': [], 'raw': [], 'PHONESTATUS': [], 'PROCESSMGR': [], 'debug': [] }
+		self._recbufsx = { 'AT+': [], 'raw': [], 'PHONESTATUS': [], 'PROCESSMGR': [], 'debug': [] }
 		self._logf = file('broker.log', 'w')
 		self._serx = serial.Serial('/dev/ttyACM1', 115200, timeout = 1, dsrdtr = 1, rtscts = 1)
 		self._serx.write('AT+WINCOMM\r')
 		self._serx.flushInput()
 		self._serx.flushOutput()
 
-	def _sread(self, b = 1):
-		a = self._ser.read(b)
+	def _sread(self, port, b = 1):
+		a = port.read(b)
 		n = -1
 		if not a is None:
 			n = len(a)
 		self._logf.write('read:  %5d %5d %s\n' % (b, n, repr(a)))
 		return a
 
-	def _sreadline(self):
-		a = self._ser.readline()
+	def _sreadline(self, port):
+		a = port.readline()
 		n = -1
 		if not a is None:
 			n = len(a)
 		self._logf.write('readl:       %5d %s\n' % (len(a), repr(a)))
 		return a
 
-	def _swrite(self, b):
-		a = self._ser.write(b)
+	def _swrite(self, port, b):
+		a = port.write(b)
 		self._logf.write('write: %5d       %s\n' % (len(b), repr(b)))
 		return a
 
-	def _receive(self, channel, timeout = 1):
-		if not channel in self._recbufs:
+	def _receive(self, port, channel, timeout = 1):
+		ser = self._ser if port == 'cmd' else self._serx
+		buf = self._recbufs if port == 'cmd' else self._recbufsx
+		if not channel in buf:
 			return None
-		self._ser.timeout = timeout
-		while not len(self._recbufs[channel]):
-			s = self._sread(1)
+		ser.timeout = timeout
+		while not len(buf[channel]):
+			s = self._sread(ser, 1)
 			if not s:
 				return None
-			if s != '\x7f':
-				if s != '\n':
-					r = self._sreadline()
-					if r is None:
-						raise InvalidResponseError(r)
-					s += r
-				self._recbufs['AT+'].append(string.strip(s))
-			else:
-				rd = self._sread(2)
+			if s == '\x7f':
+				rd = self._sread(ser, 2)
 				rlen = struct.unpack("<H", rd)
-				r = self._sread(rlen[0] + 2)
+				r = self._sread(ser, rlen[0] + 2)
 				if r[-1] != '\x7e':
 					raise InvalidResponseError(r)
 				mo = re.match("\x04([0-9]{5})\|(-?[0-9]+:-?[0-9]+:-?[0-9]+)\|([A-Z]+):(-?[0-9]+)> (.*)", r[0:-1])
-				if mo and mo.group(3) in self._recbufs:
-					self._recbufs[mo.group(3)].append((
+				if mo and mo.group(3) in buf:
+					buf[mo.group(3)].append((
 						int(mo.group(1)),
 						mo.group(2),
 						mo.group(3),
@@ -124,14 +120,31 @@ class SamsungWave:
 						# ignore
 						pass
 					else:
-						self._recbufs['raw'].append(r[0:-1])
-		return self._recbufs[channel].pop(0)
+						buf['raw'].append(r[0:-1])
+			elif s == '\x1b':
+				# TODO: rewrite in a safer way
+				r = s + self._sread(ser, 1)
+				while r:
+					mo = re.match('\x1b\x02\[(.*?)\)\x1b\x03', r, re.DOTALL)
+					if mo:
+						buf['debug'].append(mo.group(1))
+						r = r[len(mo.group(0)):]
+					else:
+						r += self._sread(ser, 1)
+			else:
+				if s != '\n':
+					r = self._sreadline(ser)
+					if r is None:
+						raise InvalidResponseError(r)
+					s += r
+				buf['AT+'].append(string.strip(s))
+		return buf[channel].pop(0)
 
 	def _AT(self, command):
-		self._swrite(command + "\r\n")
+		self._swrite(self._ser, command + "\r\n")
 		result = []
 		while True:
-			r = self._receive('AT+')
+			r = self._receive('cmd', 'AT+')
 			if r is None:
 				return None
 			if r and r != command:
@@ -181,14 +194,14 @@ class SamsungWave:
 		"""
 		"""
 		frame = '\x7f' + struct.pack('<HB', len(payload), cmd) + payload + '\x7e'
-		self._swrite(frame)
+		self._swrite(self._ser, frame)
 
 	def isInstallationPossible(self, appId, nbytes):
 		"""
 		"""
 		self._send(4, "[1600:1601]GetAppInstallCondition %s %d" % ( appId, nbytes ))
 		while True:
-			r = self._receive('PHONESTATUS', 3)
+			r = self._receive('cmd', 'PHONESTATUS', 3)
 			if r is None:
 				return False
 			mo = re.search('errType=([0-9]+)', r[4])
@@ -201,7 +214,7 @@ class SamsungWave:
 		self._send(4, "[1600:1601]TerminateProcessEx %s 0" % appId)
 		ans = []
 		while True:
-			r = self._receive('PROCESSMGR')
+			r = self._receive('cmd', 'PROCESSMGR')
 			if not r:
 				return ans
 			ans.append(r)
@@ -212,7 +225,7 @@ class SamsungWave:
 		self._send(4, '[0:2]MID_PROCESSMGR,0xFF')
 		self._send(4, '[0:2]MID_DIAGMGR,0xFF')
 		self._send(4, '[0:2]MID_DIAGMGR,0xFF')
-		r = self._receive('PHONESTATUS', 10)
+		r = self._receive('cmd', 'PHONESTATUS', 10)
 		mo = re.search('errType=([0-9]+)', r[4])
 		if not mo:
 			raise InvalidResponseError(r)
@@ -238,7 +251,7 @@ class SamsungWave:
 		"""
 		"""
 		self._send(0x30, struct.pack("<BB", cmd, 0) + payload)
-		r = self._receive('raw', 5)
+		r = self._receive('cmd', 'raw', 5)
 		if not r:
 			raise TimeoutError, 'No response on file command'
 		if ord(r[0]) != 0x30 or ord(r[1]) != (cmd | 0xe0):
@@ -393,13 +406,14 @@ def install(appid, exename):
 		print 'Failed to install'
 
 	res = wave.appRun(appid, exename)
-	while True:
+	try:
 		while True:
-			q = wave._serx.readline()
+			q = wave._receive('debug', 'debug');
 			if q:
 				print string.strip(q)
-			else:
-				break
+	except KeyboardInterrupt:
+		print 'Exiting due to keyboard interrupt'
+	return 
 
 def main():
 	if len(sys.argv) >= 2:
